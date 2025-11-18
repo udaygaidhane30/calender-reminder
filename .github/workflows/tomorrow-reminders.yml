@@ -48,8 +48,8 @@ jobs:
           TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
           TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
           TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
+          DEFAULT_RECIPIENT_NUMBER: ${{ secrets.DEFAULT_RECIPIENT_NUMBER }}
           GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
-          CALENDAR_KEYWORDS: ${{ secrets.CALENDAR_KEYWORDS }}
         run: |
           python main.py --check tomorrow
 

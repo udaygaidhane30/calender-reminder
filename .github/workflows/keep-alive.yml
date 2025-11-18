@@ -1,0 +1,52 @@
+name: Keep Alive
+
+# This workflow automatically updates a timestamp file every 30 days
+# to keep the repository active and prevent GitHub from disabling
+# scheduled workflows due to the 60-day inactivity rule.
+
+on:
+  schedule:
+    # Runs at 00:00 UTC on the 1st of every month
+    - cron: '0 0 1 * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write  # Required to push commits
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update timestamp file
+        run: |
+          echo "Repository last active: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > LAST_ACTIVE.txt
+          echo "" >> LAST_ACTIVE.txt
+          echo "This file is automatically updated monthly by GitHub Actions" >> LAST_ACTIVE.txt
+          echo "to keep the repository active and prevent scheduled workflows" >> LAST_ACTIVE.txt
+          echo "from being disabled due to inactivity." >> LAST_ACTIVE.txt
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add LAST_ACTIVE.txt
+
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: keep repository active [skip ci]"
+            git push
+            echo "✅ Repository activity updated successfully"
+          fi
+
+      - name: Log activity
+        run: |
+          echo "Keep-alive workflow completed at $(date -u)"
+          echo "Next run scheduled for 1st of next month at 00:00 UTC"

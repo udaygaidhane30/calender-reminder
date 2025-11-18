@@ -1,0 +1,20 @@
+# Google Calendar API
+google-auth==2.35.0
+google-auth-oauthlib==1.2.1
+google-auth-httplib2==0.2.0
+google-api-python-client==2.149.0
+
+# Twilio for WhatsApp messaging
+twilio==9.3.6
+
+# Environment variables
+python-dotenv==1.0.1
+
+# Date and time utilities
+python-dateutil==2.9.0
+
+# Logging
+colorlog==6.8.2
+
+# HTTP requests (if needed for additional APIs)
+requests==2.32.3

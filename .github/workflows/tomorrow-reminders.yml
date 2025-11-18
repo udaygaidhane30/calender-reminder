@@ -1,0 +1,56 @@
+name: Tomorrow's Reminders
+
+on:
+  schedule:
+    # Runs at 3:30 PM UTC (9:00 PM IST) every day
+    - cron: '30 15 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create config directory
+        run: mkdir -p config
+
+      - name: Setup Google credentials
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+        run: |
+          echo "$GOOGLE_CREDENTIALS" > config/credentials.json
+
+      - name: Create logs directory
+        run: mkdir -p logs
+
+      - name: Check and send tomorrow's reminders
+        env:
+          TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+          TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+          TWILIO_WHATSAPP_NUMBER: ${{ secrets.TWILIO_WHATSAPP_NUMBER }}
+          GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
+          CALENDAR_KEYWORDS: ${{ secrets.CALENDAR_KEYWORDS }}
+        run: |
+          python main.py --check tomorrow
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tomorrow-reminder-logs
+          path: logs/reminder_app.log
+          retention-days: 7

@@ -34,6 +34,12 @@ jobs:
         run: |
           echo "$GOOGLE_CREDENTIALS" > config/credentials.json
 
+      - name: Setup Google token
+        env:
+          GOOGLE_TOKEN: ${{ secrets.GOOGLE_TOKEN }}
+        run: |
+          echo "$GOOGLE_TOKEN" > config/token.json
+
       - name: Create logs directory
         run: mkdir -p logs
 

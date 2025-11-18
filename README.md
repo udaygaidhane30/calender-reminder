@@ -1,4 +1,4 @@
-# Birthday Reminder App
+# Calender Reminder App
 
 An automated reminder application that scrapes data from Google Calendar and sends WhatsApp messages via Twilio API. Perfect for birthday reminders, anniversaries, or any recurring date-based notifications.
 

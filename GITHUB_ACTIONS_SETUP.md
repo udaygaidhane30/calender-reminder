@@ -78,7 +78,19 @@ Add the following secrets:
 | `TWILIO_AUTH_TOKEN` | Your Twilio Auth Token | your_auth_token |
 | `TWILIO_WHATSAPP_NUMBER` | Your Twilio WhatsApp number (sender) | +14155238886 |
 | `DEFAULT_RECIPIENT_NUMBER` | Your phone number to receive reminders | +1234567890 |
-| `GOOGLE_CREDENTIALS` | **Entire contents** of Google credentials.json | `{"installed":{"client_id":"...","project_id":"...",...}}` |
+
+#### Google Authentication Secrets:
+
+**Encrypted Token with Auto-Refresh** - Tokens auto-refresh automatically!
+- See [ENCRYPTED_TOKEN_SETUP.md](ENCRYPTED_TOKEN_SETUP.md) for detailed setup instructions
+- Need: `GOOGLE_CREDENTIALS` + `TOKEN_ENCRYPTION_KEY` + encrypted token file in repo
+- Token automatically refreshes and commits itself back to repository
+- No calendar sharing required!
+
+| Secret Name | Value | Example |
+|-------------|-------|---------|
+| `GOOGLE_CREDENTIALS` | **Entire contents** of Google credentials.json | `{"installed":{"client_id":"...",...}}` |
+| `TOKEN_ENCRYPTION_KEY` | Encryption key from token_manager.py | `VGhpc0lzQW5FeGFtcGxlS2V5...` |
 
 #### Optional Secrets:
 
@@ -101,54 +113,20 @@ Add the following secrets:
    - "Tomorrow's Reminders"
    - "Keep Alive"
 
-### 6. First-Time Authentication
+### 6. Setup Encrypted Token (Recommended)
 
-**IMPORTANT:** GitHub Actions cannot open a browser for OAuth, so you need to authenticate locally first:
+**IMPORTANT:** For automatic token refresh without manual updates, follow the encrypted token setup:
 
-```bash
-# On your local machine
-cd birthday_reminder
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-pip install -r requirements.txt
+See [ENCRYPTED_TOKEN_SETUP.md](ENCRYPTED_TOKEN_SETUP.md) for complete step-by-step instructions.
 
-# Create config directory
-mkdir -p config
+**Quick overview:**
+1. Authenticate locally to get your token
+2. Generate an encryption key
+3. Encrypt the token
+4. Commit encrypted token to repository
+5. Add encryption key to GitHub Secrets
 
-# Copy your Google credentials
-cp /path/to/downloaded/credentials.json config/credentials.json
-
-# Run the app once to authenticate
-python main.py --check today
-```
-
-This will:
-1. Open a browser for Google OAuth
-2. Create `config/token.json` with your authentication token
-
-### 7. Add Token to GitHub Secrets
-
-After authenticating locally:
-
-1. Open `config/token.json`
-2. Copy the ENTIRE contents
-3. Go to GitHub Secrets
-4. Create a new secret named `GOOGLE_TOKEN`
-5. Paste the token JSON content
-
-**Update the workflow files** to use the token:
-
-Add this step after "Setup Google credentials" in both workflow files:
-
-```yaml
-- name: Setup Google token
-  env:
-    GOOGLE_TOKEN: ${{ secrets.GOOGLE_TOKEN }}
-  run: |
-    echo "$GOOGLE_TOKEN" > config/token.json
-```
-
-### 8. Test the Workflows
+### 7. Test the Workflows
 
 #### Manual Test:
 

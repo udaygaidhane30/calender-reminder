@@ -6,6 +6,9 @@ on:
     - cron: '30 3 * * *'
   workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
+permissions:
+  contents: write  # Needed to commit refreshed token back to repo
+
 jobs:
   send-reminders:
     runs-on: ubuntu-latest
@@ -31,14 +34,19 @@ jobs:
       - name: Setup Google credentials
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          TOKEN_ENCRYPTION_KEY: ${{ secrets.TOKEN_ENCRYPTION_KEY }}
         run: |
+          # Save OAuth credentials
           echo "$GOOGLE_CREDENTIALS" > config/credentials.json
 
-      - name: Setup Google token
-        env:
-          GOOGLE_TOKEN: ${{ secrets.GOOGLE_TOKEN }}
-        run: |
-          echo "$GOOGLE_TOKEN" > config/token.json
+          # Decrypt the token
+          if [ -f "config/token.encrypted" ]; then
+            python scripts/token_manager.py decrypt config/token.encrypted config/token.json "$TOKEN_ENCRYPTION_KEY"
+            echo "✓ Token decrypted successfully"
+          else
+            echo "⚠ Warning: No encrypted token found. First-time setup required."
+            echo "   See ENCRYPTED_TOKEN_SETUP.md for instructions"
+          fi
 
       - name: Create logs directory
         run: mkdir -p logs
@@ -52,6 +60,40 @@ jobs:
           GOOGLE_CALENDAR_ID: ${{ secrets.GOOGLE_CALENDAR_ID }}
         run: |
           python main.py --check today
+
+      - name: Check if token was refreshed
+        id: check_token
+        run: |
+          # Compare token modification time
+          if [ -f "config/token.json" ]; then
+            # Check if token is newer than start of workflow (was refreshed)
+            if [ "$(find config/token.json -mmin -5)" ]; then
+              echo "token_refreshed=true" >> $GITHUB_OUTPUT
+              echo "✓ Token was refreshed during this run"
+            else
+              echo "token_refreshed=false" >> $GITHUB_OUTPUT
+              echo "✓ Token is still valid, no refresh needed"
+            fi
+          fi
+
+      - name: Re-encrypt and commit refreshed token
+        if: steps.check_token.outputs.token_refreshed == 'true'
+        env:
+          TOKEN_ENCRYPTION_KEY: ${{ secrets.TOKEN_ENCRYPTION_KEY }}
+        run: |
+          # Re-encrypt the refreshed token
+          python scripts/token_manager.py encrypt config/token.json config/token.encrypted "$TOKEN_ENCRYPTION_KEY"
+
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Commit and push
+          git add config/token.encrypted
+          git commit -m "chore: auto-update refreshed Google OAuth token [skip ci]"
+          git push
+
+          echo "✓ Refreshed token encrypted and committed to repository"
 
       - name: Upload logs
         if: always()

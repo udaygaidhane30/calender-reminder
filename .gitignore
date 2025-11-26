@@ -29,9 +29,12 @@ env/
 ENV/
 .venv
 
-# Google API credentials
+# Google API credentials (plain files - never commit these!)
 config/credentials.json
 config/token.json
+
+# Note: config/token.encrypted is NOT in .gitignore
+# It's safe to commit because it's encrypted
 
 # Logs
 logs/*.log

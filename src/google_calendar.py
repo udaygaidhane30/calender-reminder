@@ -34,7 +34,7 @@ class GoogleCalendarClient:
         self.service = None
 
     def authenticate(self):
-        """Authenticate with Google Calendar API."""
+        """Authenticate with Google Calendar API using OAuth."""
         creds = None
 
         # Load existing token if available
@@ -44,15 +44,23 @@ class GoogleCalendarClient:
         # Refresh or create new credentials
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
+                try:
+                    creds.refresh(Request())
+                    logger.info("Successfully refreshed OAuth token")
+                    # Save the refreshed token
+                    with open(self.token_file, 'w') as token:
+                        token.write(creds.to_json())
+                except Exception as e:
+                    logger.error(f"Failed to refresh token: {e}")
+                    logger.info("Token refresh failed, need to re-authenticate")
+                    raise Exception("Token expired and refresh failed. Please re-authenticate locally and update the token.")
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     self.credentials_file, SCOPES)
                 creds = flow.run_local_server(port=0)
-
-            # Save credentials for next run
-            with open(self.token_file, 'w') as token:
-                token.write(creds.to_json())
+                # Save credentials for next run
+                with open(self.token_file, 'w') as token:
+                    token.write(creds.to_json())
 
         self.service = build('calendar', 'v3', credentials=creds)
         logger.info("Successfully authenticated with Google Calendar API")
